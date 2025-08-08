@@ -1,9 +1,14 @@
+
 # Dependencies
-/node_modules
+node_modules/
+**/node_modules/
+package-lock.json
+**/package-lock.json
+
 
 # Next.js build output
-/.next/
-/out/
+.next/
+out/
 
 # Miscellaneous
 .DS_Store
