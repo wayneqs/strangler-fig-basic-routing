@@ -23,21 +23,113 @@ To run this project, you will need to have the following installed on your local
 
 ## Getting Started
 
-1.  **Clone the repository:**
+### 1. Clone the repository
 
-    ```bash
-    git clone <repository-url>
-    ```
+```bash
+git clone <repository-url>
+cd strangler-fig-basic-routing
+```
 
-2.  **Start the services:**
+---
 
-    Navigate to the root of the project and run the following command:
+## Local Deployment (Recommended for Development)
 
-    ```bash
-    docker-compose up
-    ```
+You can run the full stack locally using Docker Compose. This will start the legacy app, new app, and the nginx proxy, allowing you to test the Strangler Fig pattern on your machine.
 
-    This will build the Docker images for the legacy app, new app, and the proxy, and then start the containers.
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+
+### Steps
+
+1. **Start all services locally:**
+
+```bash
+docker-compose up --build
+```
+
+This will build and start the containers for the legacy app, new app, and proxy. You can then access the applications at [http://localhost](http://localhost).
+
+2. **Stop the services:**
+   Press `Ctrl+C` in the terminal, then run:
+
+```bash
+docker-compose down
+```
+
+---
+
+## Deploy to Azure
+
+The infrastructure is managed using [Pulumi](https://www.pulumi.com/) and provisions Azure resources including a resource group, Azure Container Registry, and Azure Container Apps environment.
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/)
+- [Pulumi CLI](https://www.pulumi.com/docs/get-started/install/)
+- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+- Azure subscription
+
+### Steps
+
+1. **Install dependencies:**
+
+```bash
+cd infrastructure
+npm install
+```
+
+2. **Login to Pulumi and Azure:**
+
+```bash
+pulumi login
+az login
+```
+
+3. **Set up your Pulumi stack and Azure region:**
+
+```bash
+pulumi stack init dev   # Only if this is a new stack
+pulumi config set azure-native:location <your-azure-region>
+```
+
+4. **Deploy the infrastructure:**
+
+```bash
+pulumi up
+```
+
+This will provision the required Azure resources. Pulumi stack outputs (such as registry credentials) will be used by the deploy scripts.
+
+### 3. Build and Deploy the Applications
+
+The deployment scripts in the `deploy` folder will build the proxy Docker image, push it to Azure Container Registry, and deploy it to Azure Container Apps.
+
+#### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+- Pulumi stack must be deployed (see above)
+
+#### Steps
+
+1. **Build and push the proxy Docker image:**
+
+```bash
+cd ../deploy
+./build.sh
+```
+
+2. **Deploy the proxy to Azure Container Apps:**
+
+```bash
+./deploy.sh
+```
+
+This will create (or update) the proxy container app in Azure using the image from Azure Container Registry.
+
+> **Note:** The legacy and new Next.js apps are not deployed to Azure Container Apps by default in this setup. You can extend the infrastructure and deployment scripts to containerize and deploy these apps similarly if desired.
 
 ## Testing the Application
 

@@ -1,0 +1,3 @@
+name: strangler-fig-infra
+runtime: nodejs
+description: Infrastructure for strangler-fig basic routing on Azure Container Apps
