@@ -1,0 +1,13 @@
+services:
+  legacy-app:
+    build: ./legacy-app
+    ports:
+      - '3001:3000'
+  new-app:
+    build: ./new-app
+    ports:
+      - '3002:3000'
+  proxy:
+    build: ./proxy
+    ports:
+      - '80:80'
