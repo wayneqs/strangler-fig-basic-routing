@@ -87,6 +87,8 @@ pulumi login
 az login
 ```
 
+Or use `pulumi login --local` if managing deployment state locally.
+
 3. **Set up your Pulumi stack and Azure region:**
 
 ```bash
@@ -102,9 +104,9 @@ pulumi up
 
 This will provision the required Azure resources. Pulumi stack outputs (such as registry credentials) will be used by the deploy scripts.
 
-### 3. Build and Deploy the Applications
+### 3. Build and Deploy All Applications
 
-The deployment scripts in the `deploy` folder will build the proxy Docker image, push it to Azure Container Registry, and deploy it to Azure Container Apps.
+The deployment scripts in the `deploy` folder will build all three Docker images (proxy, legacy-app, new-app), push them to Azure Container Registry, and deploy them to Azure Container Apps with proper network security.
 
 #### Prerequisites
 
@@ -114,26 +116,36 @@ The deployment scripts in the `deploy` folder will build the proxy Docker image,
 
 #### Steps
 
-1. **Build and push the proxy Docker image:**
+1. **Build and push all Docker images:**
 
 ```bash
 cd ../deploy
 ./build.sh
 ```
 
-2. **Deploy the proxy to Azure Container Apps:**
+This builds and pushes:
+
+- `proxy:latest` - nginx reverse proxy
+- `legacy-app:latest` - Next.js legacy application
+- `new-app:latest` - Next.js new application
+
+2. **Deploy all containers to Azure Container Apps:**
 
 ```bash
 ./deploy.sh
 ```
 
-This will create (or update) the proxy container app in Azure using the image from Azure Container Registry.
+This deploys all three containers with the following network configuration:
 
-> **Note:** The legacy and new Next.js apps are not deployed to Azure Container Apps by default in this setup. You can extend the infrastructure and deployment scripts to containerize and deploy these apps similarly if desired.
+- **Proxy**: Publicly accessible via HTTPS (external ingress)
+- **Legacy-App & New-App**: Private, only accessible from within the Container Apps environment (internal ingress)
+- All containers communicate securely within the same VNet
 
 ## Testing the Application
 
-Once the containers are running, you can access the applications in your browser:
+### Local Testing
+
+Once the containers are running locally, you can access the applications in your browser:
 
 - **Legacy App (anything not `/billing`)**:
   - [http://localhost/](http://localhost/)
@@ -144,3 +156,12 @@ Once the containers are running, you can access the applications in your browser
   - [http://localhost/underwriting](http://localhost/underwriting)
 - **New App (`/billing`)**:
   - [http://localhost/billing](http://localhost/billing)
+
+### Azure Deployment Testing
+
+After deploying to Azure, the `deploy.sh` script will output the public URL for your proxy service. All traffic goes through this single endpoint:
+
+- **Legacy App routes**: `https://<your-proxy-url>/`, `/claims`, `/customer-servicing`, `/finance`, `/quote`, `/underwriting`
+- **New App routes**: `https://<your-proxy-url>/billing`
+
+**Note**: The legacy-app and new-app containers are not directly accessible from the internet - they can only be reached through the proxy, which provides an additional layer of security.
